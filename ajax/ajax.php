@@ -7,7 +7,7 @@ $dsn = "sqlite:///home/bakers/database/markdown-scratchpad.sqlite";
 $dbq = new DBQuery($dsn);
 
 $input     = trim($_GET['input'] ?? "");
-$threshold = $_GET['threshold']  ?? 60 * 10;
+$threshold = $_GET['threshold']  ?? 3600; // One hour
 $action    = $_GET['action'];
 
 ///////////////////////////////////////////////////////////
