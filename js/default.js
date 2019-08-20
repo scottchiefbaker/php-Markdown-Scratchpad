@@ -24,7 +24,10 @@ function load_most_recent() {
 		},
 		success: function(x) {
 			console.log(x);
-			$(".preview").html(x.html);
+
+			var mh = marked(x.MarkdownStr);
+			$(".preview").html(mh);
+
 			$(".input").val(x.MarkdownStr);
 
 			$(".input").hide();
@@ -61,7 +64,8 @@ function init_buttons() {
 					$("#save_icon").fadeOut(400);
 				}
 
-				$(".preview").html(x.html);
+				var mh = marked(input);
+				$(".preview").html(mh);
 
 				$(".input").hide();
 				$(".preview").show();
