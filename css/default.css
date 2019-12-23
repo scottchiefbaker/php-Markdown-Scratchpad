@@ -54,6 +54,25 @@ body {
         url('fonts/open_sans/OpenSans-Regular-webfont.woff') format('woff');
 }
 
+.slider_wrapper {
+	margin-top: 1em;
+	display: flex;
+}
+
+#date_str {
+	flex: 1;
+	margin-right: 1em;
+}
+
+#datepick {
+	flex: 19;
+	width: 100%;
+}
+
+.bold {
+	font-weight: bold;
+}
+
 /* ========================================================================== */
 /* MEDIA QUERIES                                                              */
 /* ========================================================================== */

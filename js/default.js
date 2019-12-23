@@ -1,5 +1,6 @@
 $(document).ready(function() {
 	init_buttons();
+	init_slider();
 	load_most_recent();
 });
 
@@ -23,8 +24,6 @@ function load_most_recent() {
 			action: 'get_most_recent',
 		},
 		success: function(x) {
-			console.log(x);
-
 			var mh = marked(x.MarkdownStr);
 			$(".preview").html(mh);
 
@@ -82,4 +81,29 @@ function init_buttons() {
 		$(".input").show();
 		$(".preview").hide();
 	});
+}
+
+function init_slider() {
+	$("#datepick").on("input", function() {
+		var now   = parseInt(new Date().getTime() / 1000);
+		var weeks = $(this).val();
+
+		var unixtime = now + ((86400 * 7) * weeks);
+		var datetime = new Date(unixtime * 1000);
+
+		var year  = datetime.getFullYear();
+		var month = pad(datetime.getMonth(), 2);
+		var day   = pad(datetime.getDate(), 2);
+
+		var date_str = year + "-" + month + "-" + day;
+
+		//console.log(weeks, datetime);
+		$("#date_str").html(date_str);
+	});
+}
+
+function pad(n, width, z) {
+	z = z || '0';
+	n = n + '';
+	return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }

@@ -26,19 +26,9 @@
 		<div class="preview markdown-body" placeholder=""></div>
 	</div>
 
-	<select>
-		<?php foreach (get_recent() as $i) {
-			print "\t\t<option>$i</option>\n";
-		}
-		?>
-	</select>
+	<div class="slider_wrapper">
+		<div id="date_str" class="bold">Now</div>
+		<input type="range" min="-51" max="0" value="0" id="datepick" />
+	</div>
 </body>
 </html>
-
-<?php
-
-function get_recent() {
-	$arr = ["Aug 12th", "Aug 13th", "Aug 14th"];
-
-	return $arr;
-}
