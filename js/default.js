@@ -7,10 +7,10 @@ $(document).ready(function() {
 function set_clickable(elem, clickable) {
 	if (clickable) {
 		$(elem).css("cursor", "pointer");
-		$(elem).css("color", "black");
+		$(elem).removeClass("tab-inactive").addClass("tab-active");
 	} else {
 		$(elem).css("cursor", "not-allowed");
-		$(elem).css("color", "lightgrey");
+		$(elem).removeClass("tab-active").addClass("tab-inactive");
 	}
 }
 
