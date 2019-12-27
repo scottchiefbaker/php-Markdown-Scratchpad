@@ -93,7 +93,7 @@ function save_text($str, $time) {
 	$sql = "INSERT INTO MarkdownHistory (MarkdownStr, MarkdownTime) VALUES (?,?);";
 	$id  = $dbq->query($sql, [$str, $time]);
 
-	return intval($id);
+	return $id;
 }
 
 function get_last_x(int $num) {
