@@ -13,6 +13,11 @@ if (!is_readable($db_file)) {
 	error_out("Unable to read database: $db_file\n\nDatabase may need to be created. Refer to installation instructions");
 }
 
+$dir = dirname($db_file);
+if (!is_writable($dir)) {
+	error_out("Unable to write to $dir. Database updates will not work");
+}
+
 ///////////////////////////////////////////////////////////
 
 $dsn = "sqlite://$db_file";
