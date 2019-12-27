@@ -14,12 +14,12 @@ if (!is_readable($db_file)) {
 }
 
 if (!is_writable($db_file)) {
-	error_out("Unable to write to $db_file.\n\nDatabase updates will not work");
+	error_out("Unable to write to $db_file\n\nDatabase updates will not work");
 }
 
-$dir = dirname($db_file);
+$dir = dirname($db_file) . "/";
 if (!is_writable($dir)) {
-	error_out("Unable to write to $dir.\n\nDatabase updates will not work");
+	error_out("Unable to write to $dir\n\nDatabase updates will not work");
 }
 
 ///////////////////////////////////////////////////////////
