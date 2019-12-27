@@ -4,12 +4,16 @@ require("Parsedown.php");
 require("db_query.class.php");
 
 $config  = @parse_ini_file("config.ini");
-
 if ($config === false) {
-	error_out("Unable to load configuration file (config.ini)");
+	error_out("Unable to load configuration file: config.ini");
 }
 
 $db_file = $config['db_path'];
+if (!is_readable($db_file)) {
+	error_out("Unable to read database: $db_file");
+}
+
+///////////////////////////////////////////////////////////
 
 $dsn = "sqlite://$db_file";
 $dbq = new DBQuery($dsn);
