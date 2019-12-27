@@ -6,3 +6,5 @@ CREATE TABLE MarkdownHistory (
 );
 
 CREATE UNIQUE INDEX datetime ON MarkdownHistory (MarkdownTime);
+
+INSERT INTO MarkdownHistory VALUES (1, replace('# Congratulations\n\nYou have successfully installed Markdown Scratchpad', '\n', char(10)), -1);
