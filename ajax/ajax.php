@@ -28,8 +28,8 @@ $dsn = "sqlite://$db_file";
 $dbq = new DBQuery($dsn);
 
 $input     = trim($_GET['input'] ?? "");
-$threshold = $_GET['threshold']  ?? 3600; // One hour
 $action    = $_GET['action'];
+$threshold = $_GET['threshold']  ?? $config['write_threshold'] ?? 3600; // One hour
 
 ///////////////////////////////////////////////////////////
 
