@@ -84,8 +84,10 @@ function save_text($str, $time) {
 			return false;
 		}
 
-		$sql = "DELETE FROM MarkdownHistory WHERE MarkdownTime = -1;";
-		$ok  = $dbq->query($sql);
+		$sql = "UPDATE MarkdownHistory SET MarkdownStr = ? WHERE MarkdownTime = -1;";
+		$ok  = $dbq->query($sql, [$str]);
+
+		return $ok;
 	}
 
 	$sql = "INSERT INTO MarkdownHistory (MarkdownStr, MarkdownTime) VALUES (?,?);";
