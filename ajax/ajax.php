@@ -91,13 +91,13 @@ function save_text($str, $time) {
 	$sql = "INSERT INTO MarkdownHistory (MarkdownStr, MarkdownTime) VALUES (?,?);";
 	$id  = $dbq->query($sql, [$str, $time]);
 
-	return $id;
+	return intval($id);
 }
 
 function get_last_x(int $num) {
 	global $dbq;
 
-	$sql = "SELECT * FROM MarkdownHistory ORDER BY MarkdownTime DESC LIMIT ?;";
+	$sql = "SELECT * FROM MarkdownHistory WHERE MarkdownTime > 0 ORDER BY MarkdownTime DESC LIMIT ?;";
 
 	$ret = $dbq->query($sql, [$num]);
 
