@@ -5,7 +5,7 @@ require("db_query.class.php");
 
 $config  = @parse_ini_file("config.ini");
 if ($config === false) {
-	error_out("Unable to load configuration file: config.ini");
+	error_out("Unable to load configuration file: config.ini\n\nCopy config.ini.sample to config.ini and try again");
 }
 
 $db_file = $config['db_path'];
