@@ -3,7 +3,10 @@
 require("Parsedown.php");
 require("db_query.class.php");
 
-$dsn = "sqlite:///home/bakers/database/markdown-scratchpad.sqlite";
+$config  = parse_ini_file("config.ini");
+$db_file = $config['db_path'];
+
+$dsn = "sqlite://$db_file";
 $dbq = new DBQuery($dsn);
 
 $input     = trim($_GET['input'] ?? "");

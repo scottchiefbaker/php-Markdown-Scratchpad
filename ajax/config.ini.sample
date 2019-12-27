@@ -1,0 +1,5 @@
+[main]
+
+; It is recommended that the database be stored *outside* of the webroot
+; Permissions on the directory need to be writable by your HTTP server
+db_path = "/home/USERNAME/database/markdown-scratchpad.sqlite"
