@@ -18,8 +18,8 @@
 	<div>
 		<h2>Markdown Scratchpad</h2>
 
-		<span id="input_button" class="button tab">Input</span>
-		<span id="preview_button" class="button tab">Preview</span>
+		<span id="input_button" class="button tab tab-inactive">Input</span>
+		<span id="preview_button" class="button tab tab-inactive">Preview</span>
 		<span id="save_icon" class="icon hidden">&#128190;</span>
 
 		<textarea class="input" placeholder="Input"></textarea>
