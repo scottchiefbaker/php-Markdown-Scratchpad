@@ -15,22 +15,35 @@ function set_clickable(elem, clickable) {
 }
 
 function load_most_recent() {
-	set_clickable($("#input_button"), true);
-	set_clickable($("#preview_button"), false);
-
 	var url = "ajax/ajax.php";
 	var opts = {
 		data: {
 			action: 'get_most_recent',
 		},
 		success: function(x) {
-			var mh = marked(x.MarkdownStr);
-			$(".preview").html(mh);
+			if (x.error_message) {
+				$("#datepick").prop('disabled', true);
 
-			$(".input").val(x.MarkdownStr);
+				set_clickable($("#input_button"), false);
+				set_clickable($("#preview_button"), false);
 
-			$(".input").hide();
-			$(".preview").show();
+				$("#input_button").off("click");
+				$("#preview_button").off("click");
+
+				var msg = "Error: " + x.error_message;
+				alert(msg);
+			} else {
+				var mh = marked(x.MarkdownStr);
+				$(".preview").html(mh);
+
+				$(".input").val(x.MarkdownStr);
+
+				$(".input").hide();
+				$(".preview").show();
+
+				set_clickable($("#input_button"), true);
+				set_clickable($("#preview_button"), false);
+			}
 		},
 	};
 

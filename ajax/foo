@@ -1,0 +1,3 @@
+[main]
+
+db_path = "/home/bakers/database/markdown-scratchpad.sqlite"

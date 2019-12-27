@@ -3,7 +3,12 @@
 require("Parsedown.php");
 require("db_query.class.php");
 
-$config  = parse_ini_file("config.ini");
+$config  = @parse_ini_file("config.ini");
+
+if ($config === false) {
+	error_out("Unable to load configuration file (config.ini)");
+}
+
 $db_file = $config['db_path'];
 
 $dsn = "sqlite://$db_file";
@@ -106,4 +111,13 @@ function json_output($hash,$return = 0) {
 		print $output;
 		exit;
 	}
+}
+
+function error_out($str) {
+	$x = [
+		'error_count'   => 1,
+		'error_message' => $str,
+	];
+
+	json_output($x);
 }
