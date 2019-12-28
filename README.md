@@ -12,7 +12,7 @@ Simple scratchpad for keeping notes in Markdown format
 5. Update `db_path` in `config.ini` to match the database you created in step 3.i
 6. Make sure the database file and directory is writable by your web server
     1. `chgrp apache /path/to/database/`
-	2. `chgrp apache /path/to/database/markdown-scratpad.sqlite`
+	2. `chgrp apache /path/to/database/markdown-scratchpad.sqlite`
 	3. `chown g+w /path/to/database/`
-	4. `chown g+w /path/to/database/markdown-scratpad.sqlite`
+	4. `chown g+w /path/to/database/markdown-scratchpad.sqlite`
 7. Navigate to the directory created in step #1 using the web browser of choice
