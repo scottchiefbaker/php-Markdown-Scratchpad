@@ -17,7 +17,7 @@
 <body>
 	<div>
 		<!-- https://unicode-table.com/en/1F517/ -->
-		<h2>Markdown Scratchpad <a class="external_link" title="Markdown cheatsheet" href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">&#128279;</a></h2>
+		<h2><span class="format_table pointer" title="Align table data in input">M</span>arkdown Scratchpad <a class="external_link" title="Markdown cheatsheet" href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">&#128279;</a></h2>
 
 		<span id="input_button" class="button tab tab-inactive">Input</span>
 		<span id="preview_button" class="button tab tab-inactive">Preview</span>

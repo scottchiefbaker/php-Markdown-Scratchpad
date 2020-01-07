@@ -1,8 +1,16 @@
 $(document).ready(function() {
 	init_buttons();
 	init_slider();
+	init_format_table();
+
 	load_most_recent();
 });
+
+function init_format_table() {
+	$(".format_table").on("click", function() {
+		markdown_table_cleanup(".input");
+	});
+}
 
 function set_clickable(elem, clickable) {
 	if (clickable) {
@@ -119,4 +127,90 @@ function pad(n, width, z) {
 	z = z || '0';
 	n = n + '';
 	return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+}
+
+function markdown_table_cleanup(elem) {
+	var str                = $(elem).val();
+	var lines              = str.split("\n");
+	var ret                = "";
+	var table_data         = [];
+	var prev_is_table_line = false;
+
+	for (var i = 0; i < lines.length; i++) {
+		var is_last_line  = ((i + 1) === lines.length);
+		var line          = lines[i];
+		var is_table_line = (line.match(/^\|/) !== null);
+
+		// If it's a table line just gather the data for outputting later
+		if (is_table_line) {
+			var line  = line.replace(/(^\||\|$)/g, '');      // Remove trailing and leading |
+			var parts = line.split(/\|/).map(e => e.trim()); // Trim() each part
+			table_data.push(parts);
+
+			// If it's the last line and we have table data output it
+			if (is_last_line && table_data) {
+				ret += format_table(table_data);
+			}
+			// If it's a transition from table to non-table time to output
+		} else if ((prev_is_table_line && !is_table_line)) {
+			ret += format_table(table_data);
+			ret += line + "\n";
+
+			table_data = [];
+			// None table line so we just spit out what we got in
+		} else {
+			ret += line + "\n";
+		}
+
+		prev_is_table_line = is_table_line;
+	}
+
+	$(elem).val(ret);
+
+	return ret;
+}
+
+function format_table(table_data) {
+	var ret = "";
+	var columns = table_data[0].length;
+	var max_len = [];
+
+	// Calculate the max length of each column
+	for (var row = 0; row < table_data.length; row++) {
+		for (var col = 0; col < columns; col++) {
+			var item_len    = table_data[row][col].length;
+			var max_len_col = max_len[col] || 0;
+
+			if (item_len > max_len_col) {
+				max_len[col] = item_len;
+			}
+		}
+	}
+
+	// Each column gets a max length
+	// console.log(max_len);
+
+	// Loop through the data and format the items with padding as appropriate
+	for (var row = 0; row < table_data.length; row++) {
+		for (var col = 0; col < columns; col++) {
+			var col_len = max_len[col];
+			var item    = table_data[row][col];
+
+			if (table_data[row][col].match(/^---/)) {
+				item = "-".repeat(col_len);
+			}
+
+			//table_data[row][col] = item.padStart(col_len); // Right align
+			table_data[row][col] = item.padEnd(col_len); // Left align
+		}
+	}
+
+	//console.log(table_data);
+
+	// Now that the items are all clean we spit out the final data
+	for (var row = 0; row < table_data.length; row++) {
+		ret += "| " + table_data[row].join(" | ") + " |\n";
+	}
+
+	return ret;
 }
