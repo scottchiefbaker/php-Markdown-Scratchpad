@@ -68,9 +68,6 @@ function init_buttons() {
 			return false;
 		}
 
-		set_clickable($("#input_button"), true);
-		set_clickable($("#preview_button"), false);
-
 		var url = "ajax/ajax.php";
 		var opts = {
 			data: {
@@ -87,8 +84,7 @@ function init_buttons() {
 				var mh = marked(input);
 				$(".preview").html(mh);
 
-				$(".input").hide();
-				$(".preview").show();
+				show_preview();
 			},
 		};
 
@@ -96,12 +92,24 @@ function init_buttons() {
 	});
 
 	$("#input_button").on("click", function() {
-		set_clickable($("#input_button"), false);
-		set_clickable($("#preview_button"), true);
-
-		$(".input").show();
-		$(".preview").hide();
+		show_input();
 	});
+}
+
+function show_input() {
+	set_clickable($("#input_button"), false);
+	set_clickable($("#preview_button"), true);
+
+	$(".input").show();
+	$(".preview").hide();
+}
+
+function show_preview() {
+	set_clickable($("#input_button"), true);
+	set_clickable($("#preview_button"), false);
+
+	$(".input").hide();
+	$(".preview").show();
 }
 
 function init_slider() {
@@ -135,6 +143,8 @@ function markdown_table_cleanup(elem) {
 	var ret                = "";
 	var table_data         = [];
 	var prev_is_table_line = false;
+
+	show_input();
 
 	for (var i = 0; i < lines.length; i++) {
 		var is_last_line  = ((i + 1) === lines.length);
