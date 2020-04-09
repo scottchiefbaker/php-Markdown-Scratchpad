@@ -17,11 +17,13 @@
 <body>
 	<div>
 		<!-- https://unicode-table.com/en/1F517/ -->
-		<h2><span class="format_table pointer" title="Align table data in input">M</span>arkdown Scratchpad <a class="external_link" title="Markdown cheatsheet" href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">&#128279;</a></h2>
+		<h2 class="header"><span class="format_table pointer" title="Align table data in input">M</span>arkdown Scratchpad <a class="external_link" title="Markdown cheatsheet" href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">&#128279;</a></h2>
 
-		<span id="input_button" class="button tab tab-inactive">Input</span>
-		<span id="preview_button" class="button tab tab-inactive">Preview</span>
-		<span id="save_icon" class="icon hidden">&#128190;</span>
+		<div class="buttons">
+			<span id="input_button" class="button tab tab-inactive">Input</span>
+			<span id="preview_button" class="button tab tab-inactive">Preview</span>
+			<span id="save_icon" class="icon hidden">&#128190;</span>
+		</div>
 
 		<textarea class="input" placeholder="Input"></textarea>
 		<div class="preview markdown-body" placeholder=""></div>
