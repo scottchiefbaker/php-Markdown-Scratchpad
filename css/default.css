@@ -20,9 +20,10 @@ body {
 }
 
 .input {
-	display     : none;
-	font-size   : 14pt;
-	font-family : "Source Code Pro", monospace;
+	display          : none;
+	font-size        : 14pt;
+	font-family      : "Source Code Pro", monospace;
+	background-color : #fff;
 }
 
 .preview {
@@ -31,18 +32,31 @@ body {
 	overflow : auto;
 }
 
+.input, .preview {
+	padding : 8px;
+}
+
 .button {
 	display      : inline-block;
-	border-top   : 1px solid #ccc;
-	border-left  : 1px solid #ccc;
-	border-right : 1px solid #ccc;
+	border       : 1px solid #ccc;
 	width        : 5em;
-	padding      : 5px;
+	padding      : 8px 5px;
 	text-align   : center;
 }
 
 #preview_button, #input_button {
 	cursor: pointer;
+}
+
+.tab-active {
+	background: #f6f8fa;
+	color     : #959da5;
+}
+
+.tab-inactive {
+	background   : #fff;
+	color        : #24292e;
+	border-bottom: none;
 }
 
 @font-face {
@@ -122,11 +136,15 @@ body {
 	}
 
 	.tab-active {
-		color: #f0f6fc;
+		background   : #151b23;
+		color        : #484f58;
+		border-bottom: none;
 	}
 
 	.tab-inactive {
-		color: #484f58;
+		background   : #0d1117;
+		color        : #f0f6fc;
+		border-color : #3d444d;
 	}
 
 	#date_str {
