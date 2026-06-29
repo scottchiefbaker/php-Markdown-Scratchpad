@@ -97,21 +97,43 @@ body {
 }
 
 /* ========================================================================== */
-/* MEDIA QUERIES                                                              */
+/* DARK MODE                                                                  */
 /* ========================================================================== */
 
-/* This is for medium width devices - medium - high width desktops */
-@media (min-width: 1401px) and (max-width: 1800px) {
-}
+@media (prefers-color-scheme: dark) {
+	body {
+		background-color: #0d1117;
+		color: #f0f6fc;
+	}
 
-/* This is for medium width devices - medium width desktops */
-@media (min-width: 1026px) and (max-width: 1400px) {
-}
+	.input, .preview {
+		border-color: #3d444d;
+	}
 
-/* This is for medium width devices - tablets */
-@media (min-width: 641px) and (max-width: 1025px) {
-}
+	.input {
+		background-color: #0d1117;
+		color: #f0f6fc;
+	}
 
-/* This is for small width devices - phones */
-@media (min-width: 0px) and (max-width: 640px) {
+	.button {
+		border-top-color  : #3d444d;
+		border-left-color : #3d444d;
+		border-right-color: #3d444d;
+	}
+
+	.tab-active {
+		color: #f0f6fc;
+	}
+
+	.tab-inactive {
+		color: #484f58;
+	}
+
+	#date_str {
+		color: #f0f6fc;
+	}
+
+	.external_link {
+		color: #4493f8;
+	}
 }
