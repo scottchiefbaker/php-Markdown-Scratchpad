@@ -4,8 +4,8 @@
 		<title></title>
 
 		<script type="text/javascript" src="js/jquery.js"></script>
-		<script type="text/javascript" src="js/default.js"></script>
 		<script type="text/javascript" src="js/marked.min.js"></script>
+		<script type="text/javascript" src="js/default.js"></script>
 
 		<script>
 			// Vanilla JS here
