@@ -41,7 +41,7 @@ function load_most_recent() {
 				var msg = "Error: " + x.error_message;
 				alert(msg);
 			} else {
-				var mh = marked(x.MarkdownStr);
+				var mh = marked.parse(x.MarkdownStr);
 				$(".preview").html(mh);
 
 				$(".input").val(x.MarkdownStr);
@@ -81,7 +81,7 @@ function init_buttons() {
 					$("#save_icon").fadeOut(400);
 				}
 
-				var mh = marked(input);
+				var mh = marked.parse(input);
 				$(".preview").html(mh);
 
 				show_preview();
