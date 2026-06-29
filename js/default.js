@@ -6,6 +6,14 @@ $(document).ready(function() {
 	load_most_recent();
 });
 
+window.addEventListener("beforeunload", function() {
+	var input = $(".input").val();
+	if (input.trim().length > 0) {
+		var time = parseInt(new Date().getTime() / 1000);
+		navigator.sendBeacon("ajax/ajax.php?input=" + encodeURIComponent(input) + "&unixtime=" + time);
+	}
+});
+
 function init_format_table() {
 	$(".format_table").on("click", function() {
 		markdown_table_cleanup(".input");
