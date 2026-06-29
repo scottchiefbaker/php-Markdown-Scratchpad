@@ -1,28 +1,61 @@
 <?php
 
-define("DB_QUERY_VERSION","1.0.0");
+define("DB_QUERY_VERSION","1.1.3");
 
 //////////////////////////////////////////////////////////////////////////////
 
 class DBQuery {
-	var $debug                   = 0;
-	var $show_errors             = 1;   // If this is set to zero be silent about all errors
-	var $slow_query_time         = 0.1; // Highlight queries that takes longer than this
-	var $external_error_function = "";  // Override the built in error function
-	var $db_name                 = "";  // Placeholder
-	var $dbh_cache               = [];
-	var $dbh                     = null;
-	var $query_log               = "";
+	public int $debug               = 0;
+	public bool $show_errors        = true;
+	public int $slow_query_time     = 100; // Highlight queries that take longer than this (in ms)
+	public $external_error_function = "";  // Override the built in error function (callable)
+	public string $db_name          = "";
+	public array $dbh_cache         = [];
+	public ?PDO $dbh                = null;
+	public string $query_log        = "";
+	public int $record_limit        = 10000; // Don't return more than X records to prevent memory exhaustion
+	public array $db_query_info     = [];
 
-	public function __construct($dsn,$user = "",$pass = "") {
+	private string $dsn             = "";
+	private string $user            = "";
+	private string $pass            = "";
+	private bool $delay_connect     = false;
+
+	private ?PDOStatement $sth      = null;
+	private ?int $fetch_num         = null;
+	private ?string $query_sql      = null;
+
+	public function __construct(string $dsn, string $user = "", string $pass = "", array $opts = []) {
+		// Delay connection until the first query
+		$delay_connect = $opts['delay_connect'] ?? false;
+
+		$this->dsn           = $dsn;
+		$this->user          = $user;
+		$this->pass          = $pass;
+		$this->delay_connect = $delay_connect;
+
+		// If we're not delaying connect right now
+		if (!$delay_connect) {
+			$this->connect_db($dsn,$user,$pass);
+		}
+	}
+
+	public function connect_db(string $dsn, string $user = "", string $pass = ""): PDO|false {
 		$ret = new PDO($dsn,$user,$pass);
 
 		if ($ret) {
 			$this->dbh = $ret;
 		}
+
+		return $ret;
 	}
 
-	public function query($sql = "",$return_type = "",$third = '') {
+	public function query(string $sql = "", string|array $return_type = "", string $third = ''): mixed {
+		// If we're delaying and we don't already have a DB handle
+		if ($this->delay_connect && !$this->dbh) {
+			$ok = $this->connect_db($this->dsn, $this->user, $this->pass);
+		}
+
 		$start = microtime(1);
 		$sql   = trim($sql);
 
@@ -30,7 +63,7 @@ class DBQuery {
 
 		// Test if the DB connection is there
 		if (!$dbh) {
-			$this->error_out('DBH connection not present (Error: #1559)');
+			$this->error_out('DBH connection not present', 15990);
 		}
 
 		$prepare_values = array();
@@ -54,7 +87,17 @@ class DBQuery {
 		// If there is a SQL command, run it
 		if ($sql) {
 			// Prepare the command
-			$sth = $dbh->prepare($sql);
+			try {
+				$sth = $dbh->prepare($sql);
+			} catch (Exception $e) {
+				if ($show_errors) {
+					$msg = "Exception: " . $e->getMessage() . "\n";
+					$this->error_out($msg, 23489);
+				}
+
+				return false;
+			}
+
 			if (!$sth) {
 				list($sql_error_code,$driver_error_code,$err_text) = $dbh->errorInfo();
 
@@ -82,11 +125,21 @@ class DBQuery {
 					return false;
 				}
 
-				$this->error_out(array("Unable to create a <b>\$DBH</b> handle", $err_text));
+				$this->error_out(array("Unable to create a <b>\$DBH</b> handle", $err_text), 34102);
 			}
 
 			// Execute the command with the appropriate replacement variables (if any)
-			$sth->execute($prepare_values);
+			try {
+				$sth->execute($prepare_values);
+			} catch (Exception $e) {
+				if ($show_errors) {
+					$msg = "Exception: " . $e->getMessage() . "\n";
+					$this->error_out($msg, 48203);
+				}
+
+				return false;
+			}
+
 			$affected_rows = $sth->rowCount();
 			$err = $sth->errorInfo();
 
@@ -102,10 +155,15 @@ class DBQuery {
 
 		// Check for non "00000" error status
 		if ($show_errors && $has_error) {
-			$html_sql = "<pre>" . $this->sql_clean($sql) . "</pre>";
-			$err_text = $err[2];
+			$html_sql    = "<pre>" . $this->sql_clean($sql) . "</pre>";
+			$html_params = join(", ", $prepare_values);
+			$err_text    = $err[2];
 
-			$this->error_out("<span>Syntax Error</span>\n" . $html_sql . "\n" . $err_text);
+			if (empty($prepare_values)) {
+				$this->error_out("<span>Syntax Error</span>\n$html_sql\n$err_text", 34913);
+			} else {
+				$this->error_out("<span>SQL Syntax Error</span>\n$html_sql\n<div>Params: $html_params</div>\n<br />\n$err_text", 34913);
+			}
 		}
 
 		if (preg_match("/info_hash[:|](\w+)(\[\])?/",$return_type,$m)) {
@@ -127,7 +185,7 @@ class DBQuery {
 			}
 
 			$this->sth = $sth; // Cache the $sth
-			$this->sql = $sql;
+			$this->query_sql = $sql;
 
 			$total = microtime(1) - $start;
 
@@ -148,7 +206,7 @@ class DBQuery {
 
 			$info['called_from_file'] = $i[$num]['file'];
 			$info['called_from_line'] = $i[$num]['line'];
-			$this->db_query_info[] = $info;
+			$this->db_query_info[]    = $info;
 
 			return true;
 		}
@@ -156,22 +214,24 @@ class DBQuery {
 		$is_fetch = 0;
 		if (!$sql && $this->sth) {
 			$sth = $this->sth;
-			$sql = $this->sql;
+			$sql = $this->query_sql;
 			$is_fetch = 1;
 		}
 
+		$rec_limit         = $this->record_limit;
+		$max_allowed_error = "Query exceeded max allowed records: $rec_limit";
+
+		///////////////////////////////////////////////
+		// Be smart about what we're going to return //
+		///////////////////////////////////////////////
 		$count = 0;
-		global $DB_QUERY_REC_LIMIT;
-		$rec_limit = $DB_QUERY_REC_LIMIT;
-		$rec_limit || $rec_limit = 4000;
-		/////////////////////////////////////////////
-		// Be smart about what we're going to return
-		/////////////////////////////////////////////
-		if (!$show_errors && $has_error) { // Has to be the first to test for error status
+
+		// If we're not showing errors we silenty return false
+		if (!$show_errors && $has_error) {
 			return false;
-		} elseif ($return_type == 'one_data') {
+		} elseif ($return_type === 'one_data' || $return_type === "one") {
 			$ret = $sth->fetch(PDO::FETCH_NUM); // Get the first row
-			$ret = $ret[0]; // Get the first column of the first row
+			$ret = $ret[0] ?? null; // Get the first column of the first row
 
 			// If nothing is in the record set, return an empty string
 			if (!isset($ret)) { $ret = ''; }
@@ -181,27 +241,38 @@ class DBQuery {
 				$ret[] = $data;
 
 				$count++;
-				if ($count > $rec_limit) { $this->error_out(array("Too many records returned (> $rec_limit)",$sql)); }
+				if ($count > $rec_limit) { $this->error_out(array($max_allowed_error, $sql), 38103); }
 			}
 		// Key/Value where the first field is the key, and the second field is the value
 		} elseif ($return_type == 'key_value') {
 			while ($data = $sth->fetch(PDO::FETCH_NUM)) {
-				$ret[$data[0]] = $data[1];
+				// Floats have to be converted to strings to avoid an E_WARNING
+				if (is_float($data[0])) {
+					$key = sprintf("%0.2f", $data[0]);
+				} else {
+					$key = $data[0];
+				}
+
+				$ret[$key] = $data[1];
 			}
 		// Key/Value where we get a specific key/value from a larger list
 		} elseif (preg_match("/key_pair:(.+?),(.+)/",$return_type,$m)) {
 			while ($data = $sth->fetch(PDO::FETCH_ASSOC)) {
-				$key = $data[$m[1]];
+				$key   = $data[$m[1]];
 				$value = $data[$m[2]];
 
-				if ($key) { $ret[$key] = $value; }
+				if ($key) {
+					$ret[$key] = $value;
+				}
 			}
 
 			$return_type = 'key_pair';
 		} elseif ($return_type == 'one_column') {
-			while ($data = $sth->fetch(PDO::FETCH_NUM)) { $ret[] = $data[0]; }
+			while ($data = $sth->fetch(PDO::FETCH_NUM)) {
+				$ret[] = $data[0];
+			}
 		} elseif ($return_type == 'one_row_list') {
-			$ret = $sth->fetch(PDO::FETCH_NUM);
+			$ret         = $sth->fetch(PDO::FETCH_NUM);
 			$return_recs = 1;
 		} elseif (($return_type == 'one_row' || preg_match("/^SELECT.*LIMIT 1;?$/si",$sql)) && $return_type != 'info_hash') {
 			$ret = $sth->fetch(PDO::FETCH_ASSOC);
@@ -214,6 +285,7 @@ class DBQuery {
 
 			$return_type = 'one_row';
 			$return_recs = 1;
+		// Info hash with a key field. Example: 'info_hash:CustID'
 		} elseif ($return_type == 'info_hash' && isset($key_field)) {
 			while ($data = $sth->fetch(PDO::FETCH_ASSOC)) {
 				$key = $data[$key_field];
@@ -226,7 +298,7 @@ class DBQuery {
 
 				$count++;
 				if (isset($this->fetch_num) && ($count >= $this->fetch_num)) { break; }
-				if ($count > $rec_limit) { $this->error_out(array("Too many records returned (> $rec_limit)",$sql)); }
+				if ($count > $rec_limit) { $this->error_out(array($max_allowed_error, $sql), 13039); }
 			}
 
 			$return_type = 'info_hash_with_key';
@@ -234,7 +306,7 @@ class DBQuery {
 		} elseif ($is_fetch || (($return_type == 'info_hash' || $return_type == "") && preg_match("/^(SELECT|SHOW|EXECUTE)/i",$sql))) {
 			if (isset($this->sth)) {
 				$sth = $this->sth;
-				$sql = $this->sql;
+				$sql = $this->query_sql;
 			}
 
 			// Loop through the data and return an info hash
@@ -243,18 +315,19 @@ class DBQuery {
 
 				$count++;
 				if (isset($this->fetch_num) && ($count >= $this->fetch_num)) { break; }
-				if ($count > $rec_limit) { $this->error_out(array("Too many records returned (> $rec_limit)",$sql)); }
+				if ($count > $rec_limit) { $this->error_out(array($max_allowed_error, $sql), 12940); }
 			}
 
 			// If we have a cache sth and nothing to return it means
 			// we hit the end of the record set so we need to zero
 			// out all the fetch related vars
 			if (isset($this->sth) && !isset($ret)) {
-				$this->sql = $this->sth = $this->fetch_num = NULL;
+				$this->query_sql = $this->sth = $this->fetch_num = NULL;
 				return array();
 			}
 
 			$return_type = 'info_hash';
+		// It's an INSERT so we try and return the record id
 		} elseif ($return_type == 'insert_id' || preg_match("/^INSERT/i",$sql)) {
 			// Get the ID from the inserted record, and convert it to an integer
 			$insert_id = $ret = $dbh->lastInsertId();
@@ -264,6 +337,7 @@ class DBQuery {
 
 			$return_type = 'insert_id';
 			$return_recs = 1;
+		// Delete/Update returns the number of rows affected
 		} elseif ($return_type == 'affected_rows' || preg_match("/^(DELETE|UPDATE|REPLACE|TRUNCATE)/i",$sql)) {
 			$ret         = $affected_rows;
 			$return_type = 'affected_rows';
@@ -285,10 +359,10 @@ class DBQuery {
 			$error   .= "<b>SQL:</b> $html_sql</div>";
 			$error   .= "<b>ReturnType:</b> $return_type</div>";
 
-			$this->error_out($error);
+			$this->error_out($error, 13843);
 		}
 
-		$total = microtime(1) - $start;
+		$total = (microtime(1) - $start) * 1000;
 
 		// Store some info about this query
 		if (!isset($return_recs)) {
@@ -327,7 +401,7 @@ class DBQuery {
 
 		$info['called_from_file'] = $i[$num]['file'];
 		$info['called_from_line'] = $i[$num]['line'];
-		$this->db_query_info[] = $info;
+		$this->db_query_info[]    = $info;
 
 		// Log to a file if need be
 		if (!empty($this->query_log) && is_writable($this->query_log)) {
@@ -351,16 +425,25 @@ class DBQuery {
 		return $ret;
 	}
 
-	public function error_out($msg) {
+	public function error_out(string|array $msg, ?int $num = null) {
 		// Don't print any errors if we're not showing errors
 		if (!$this->show_errors) { return false; }
 
-		if (is_callable($this->external_error_function)) {
-			call_user_func($this->external_error_function,$msg);
+		// If we don't get an error number use a "default" value
+		if (is_null($num)) {
+			$num = 89317;
 		}
 
-		if (!is_array($msg)) { $msg = array($msg); }
+		if (is_callable($this->external_error_function)) {
+			call_user_func($this->external_error_function,$msg, $num);
+		}
+
+		if (!is_array($msg)) {
+			$msg = array($msg);
+		}
+
 		$cli = $this->is_cli();
+		print "<h2>Error #$num</h3>";
 
 		foreach ($msg as $m) {
 			if ($m) {
@@ -377,19 +460,19 @@ class DBQuery {
 	}
 
 	public function number_ordinal($num) {
-		$ones = $num % 100;
+		$ones = $num % 10;
+		$tens = $num % 100;
 
-		if ($ones == 1) { $ret = "st"; }
+		if ($tens >= 11 && $tens <= 13) { $ret = "th"; }
+		elseif ($ones == 1) { $ret = "st"; }
 		elseif ($ones == 2) { $ret = "nd"; }
 		elseif ($ones == 3) { $ret = "rd"; }
-		elseif ($ones >= 4) { $ret = "th"; }
-		elseif ($ones >= 0) { $ret = "th"; } // For 100
-		else { $ret = "??"; }
+		else { $ret = "th"; }
 
 		return $ret;
 	}
 
-	public function query_summary() {
+	public function query_summary(): string {
 		if (empty($this->db_query_info)) {
 			return "";
 		}
@@ -421,25 +504,25 @@ class DBQuery {
 			if ($item['exec_time'] > $this->slow_query_time) {
 				$row_color   = "#FF9FA1";
 				$sql_bg      = "#FFE4E6";
-				$query_title = "Warning: This query is above the Slow Query threshold of " . $this->slow_query_time . " seconds";
+				$query_title = "Warning: This query is above the Slow Query threshold of " . $this->slow_query_time . " ms";
 			} else {
 				$row_color   = "#E7FFEB";
 				$sql_bg      = "white";
 				$query_title = "";
 			}
 
-			$query_time = sprintf("%0.3f",$item['exec_time']);
+			$query_time = sprintf("%0.1f",$item['exec_time']);
 
 			$ret .= "<table title=\"$query_title\" style=\"width: 100%; border-collapse: collapse; border: 1px solid; margin-bottom: 1em;\">\n";
-			$ret .= "\t<tr style=\"background-color: $row_color; color: black; text-align: center; font-size: 0.8em;\">\n";
+			$ret .= "\t<tr style=\"background-color: $row_color; color: black; text-align: center;\">\n";
 			$ret .= "\t\t<td style=\"width: 8%; border: 1px solid;\"><b>#$count</b>$dbn</td>\n";
-			$ret .= "\t\t<td style=\"width: 15%; border: 1px solid;\">Time: <b>$query_time seconds</b></td>\n";
+			$ret .= "\t\t<td style=\"width: 15%; border: 1px solid;\">Time: <b>$query_time ms</b></td>\n";
 			$ret .= "\t\t<td style=\"width: 37%; border: 1px solid;\"><b>{$item['called_from_file']}</b> line <b>#{$item['called_from_line']}</b>$my_count</td>\n";
 			$ret .= "\t\t<td style=\"width: 20%; border: 1px solid;\">Return: <b>{$item['return_type']}</b></td>\n";
 			$ret .= "\t\t<td style=\"width: 20%; border: 1px solid;\">Returned: <b>{$item['records_returned']}</b></td>\n";
 			$ret .= "\t</tr>\n";
 			$ret .= "\t<tr>\n";
-			$ret .= "\t\t<td colspan=\"5\"><div style=\"font-family: monospace; background-color: $sql_bg; color: black; font-size: 1.2em; padding: .2em;\">" . nl2br($this->sql_clean($item['sql'])) . "</div></td>\n";
+			$ret .= "\t\t<td colspan=\"5\"><div style=\"font-family: monospace; background-color: $sql_bg; color: black; padding: 5px;\">" . nl2br($this->sql_clean($item['sql'])) . "</div></td>\n";
 			if ($item['parameter_values']) {
 				$colors = array('#DCDCDC','#F6F6F6');
 
@@ -454,7 +537,7 @@ class DBQuery {
 					$color = $colors[$value_count % sizeof($colors)];
 					$item2 = "<span style=\"background-color: $color\">$item2</span>";
 				}
-				$ret .= "\t\t<tr  style=\"border-top: 1px solid #bbb; background-color: $sql_bg;\"><td colspan=\"5\" style=\"font-size: 0.8em;\"><div class=\"wide\"><b>Values</b>: " . join(" ", $item['parameter_values']) . "</div></td></tr>\n";
+				$ret .= "\t\t<tr  style=\"border-top: 1px solid #bbb; background-color: $sql_bg;\"><td colspan=\"5\" style=\"padding: 5px\"><div class=\"wide\"><b>Values</b>: " . join(" ", $item['parameter_values']) . "</div></td></tr>\n";
 			}
 			$ret .= "\t</tr>\n";
 
@@ -469,19 +552,19 @@ class DBQuery {
 			$total_time += $item['exec_time'];
 		}
 
-		$total_time = sprintf("%0.3f",$total_time);
+		$total_time = sprintf("%0.1f",$total_time);
 
 		$ret .= "<div><b>Total Queries:</b> $count</div>\n";
-		$ret .= "<div><b>Total SQL Execution:</b> $total_time seconds</div>\n";
+		$ret .= "<div><b>Total SQL Execution:</b> $total_time ms</div>\n";
 
 		return $ret;
 	}
 
-	public function sql_clean($sql,$htmlize = 1) {
+	public function sql_clean(string $sql, int $htmlize = 1): string {
 		$ret = preg_replace("/\n|\r/"," ",$sql); // Make it all one line
 		$ret = preg_replace("/\s+/"," ",$ret); // Remove double spaces
 
-		$words = array("FROM","WHERE","INNER JOIN","LEFT JOIN","GROUP BY","LIMIT","VALUES","SET","ORDER BY","OFFSET");
+		$words = array("FROM","WHERE","INNER JOIN","LEFT JOIN","GROUP BY","LIMIT","VALUES","SET","ORDER BY","OFFSET","LEFT OUTER JOIN");
 
 		foreach ($words as $word) {
 			$ret = preg_replace("/\b$word\b/i","\n$word",$ret); // Add a \n before each of the "words"
@@ -506,27 +589,31 @@ class DBQuery {
 		return $ret;
 	}
 
-	public function debug_log($str) {
+	public function debug_log(string $str): void {
 		if ($this->debug) { print "<div>$str</div>\n"; }
 	}
 
-	public function quote($str) {
+	public function quote(string $str): string|false {
 		return $this->dbh->quote($str);
 	}
 
-	public function begin() {
+	public function begin(): bool {
 		return $this->dbh->beginTransaction();
 	}
 
-	public function commit() {
+	public function commit(): bool {
 		return $this->dbh->commit();
 	}
 
-	public function rollback() {
+	public function rollback(): bool {
 		return $this->dbh->rollback();
 	}
 
-	public function last_info() {
+	public function last_info(): array {
+		if (empty($this->db_query_info)) {
+			return [];
+		}
+
 		// The last element of the info array
 		$arr  = $this->db_query_info;
 		$info = array_slice($arr,-1,1);
@@ -537,7 +624,7 @@ class DBQuery {
 		return $ret;
 	}
 
-	public function is_cli() {
+	public function is_cli(): bool {
 		if (php_sapi_name() == 'cli') {
 			return true;
 		}
