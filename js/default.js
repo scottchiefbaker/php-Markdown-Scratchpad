@@ -104,15 +104,33 @@ function init_buttons() {
 	});
 }
 
+var savedCursorPos = null;
+
 function show_input() {
 	set_clickable($("#input_button"), false);
 	set_clickable($("#preview_button"), true);
 
 	$(".input").show();
 	$(".preview").hide();
+
+	if (savedCursorPos) {
+		var el = $(".input")[0];
+		el.focus();
+		el.selectionStart = savedCursorPos.start;
+		el.selectionEnd   = savedCursorPos.end;
+		el.scrollTop      = savedCursorPos.scrollTop;
+		savedCursorPos = null;
+	}
 }
 
 function show_preview() {
+	var el = $(".input")[0];
+	savedCursorPos = {
+		start    : el.selectionStart,
+		end      : el.selectionEnd,
+		scrollTop: el.scrollTop,
+	};
+
 	set_clickable($("#input_button"), true);
 	set_clickable($("#preview_button"), false);
 
