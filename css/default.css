@@ -39,6 +39,7 @@ body {
 .button {
 	display      : inline-block;
 	border       : 1px solid #ccc;
+	border-radius: 4px 4px 0 0;
 	width        : 5em;
 	padding      : 8px 5px;
 	text-align   : center;
@@ -49,14 +50,15 @@ body {
 }
 
 .tab-active {
-	background: #f6f8fa;
-	color     : #959da5;
+	background   : #fff;
+	color        : #24292e;
+	border-bottom: 3px solid #1eb76f !important;
 }
 
 .tab-inactive {
-	background   : #fff;
-	color        : #24292e;
-	border-bottom: none;
+	background    : #f6f8fa;
+	color         : #959da5;
+	border-bottom : 3px solid #3d444d !important;
 }
 
 @font-face {
@@ -85,20 +87,6 @@ body {
 
 .bold {
 	font-weight: bold;
-}
-
-.tab {
-	border-radius: 4px 4px 0 0;
-}
-
-.tab-active {
-	color: black;
-	cursor: pointer;
-}
-
-.tab-inactive {
-	color: lightgray;
-	cursor: not-allowed;
 }
 
 .external_link {
@@ -130,21 +118,17 @@ body {
 	}
 
 	.button {
-		border-top-color  : #3d444d;
-		border-left-color : #3d444d;
-		border-right-color: #3d444d;
+		border-color: #3d444d;
 	}
 
 	.tab-active {
-		background   : #151b23;
-		color        : #484f58;
-		border-bottom: none;
+		background   : #0d1117;
+		color        : #f0f6fc;
 	}
 
 	.tab-inactive {
-		background   : #0d1117;
-		color        : #f0f6fc;
-		border-color : #3d444d;
+		background   : #151b23;
+		color        : #343537;
 	}
 
 	#date_str {

@@ -15,10 +15,10 @@ function init_format_table() {
 function set_clickable(elem, clickable) {
 	if (clickable) {
 		$(elem).css("cursor", "pointer");
-		$(elem).removeClass("tab-inactive").addClass("tab-active");
+		$(elem).removeClass("tab-active").addClass("tab-inactive");
 	} else {
 		$(elem).css("cursor", "not-allowed");
-		$(elem).removeClass("tab-active").addClass("tab-inactive");
+		$(elem).removeClass("tab-inactive").addClass("tab-active");
 	}
 }
 
