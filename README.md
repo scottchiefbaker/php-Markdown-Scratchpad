@@ -44,20 +44,6 @@ auto-save, and version history.
 - Use the date slider to browse older entries
 - Click the **M** in the header to auto-align table formatting in your markdown
 
-## 🌙 Dark Mode
-
-The UI automatically adapts to your system's color scheme
-(`prefers-color-scheme`). The markdown preview uses GitHub's dark theme when
-your OS is set to dark mode.
-
-## 📦 Dependencies
-
-- [marked.js](https://marked.js.org/) v4.2.12 — client-side markdown rendering
-- [Parsedown](https://parsedown.org/) — server-side markdown rendering
-- [github-markdown-css](https://github.com/sindresorhus/github-markdown-css) — GitHub-style preview styling
-- [jQuery](https://jquery.com/) 3.3.1
-- Open Sans & Source Code Pro fonts
-
 ## 📄 License
 
 [MIT](LICENSE)
